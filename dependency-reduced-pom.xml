@@ -22,14 +22,6 @@
             <goals>
               <goal>shade</goal>
             </goals>
-            <configuration>
-              <transformers>
-                <transformer />
-                <transformer>
-                  <mainClass>kth.ii2202.pubsub.testbed.Main</mainClass>
-                </transformer>
-              </transformers>
-            </configuration>
           </execution>
         </executions>
         <configuration>

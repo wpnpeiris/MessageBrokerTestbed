@@ -5,61 +5,86 @@ package kth.ii2202.pubsub.testbed;
 
 import java.util.Arrays;
 import java.util.UUID;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
- * @author pradeeppeiris
+ * MessageProducer follows the Template Method design pattern
+ * to provide the skeleton of message generating logic 
+ * for any Message Producer client in Message broker systems.
  * 
- * java -cp "target/testbed-1.0.jar:config" kth.ii2202.pubsub.testbed.Main producer
+ * @author pradeeppeiris
+ *
  */
-public abstract class Producer implements Runnable, Endpoint {
+public abstract class Producer {
+	protected final String brokerUrl;
+	protected final String queueName;
 	
-	private static final Logger logger = LogManager.getLogger(Producer.class);
-	
-	protected String brokerUrl;
-	protected Double messageSizeInKB;
-	
-	public Producer(String brokerUrl, Double messageSizeInKB) {
-		this.brokerUrl = brokerUrl;
-		this.messageSizeInKB = messageSizeInKB;
-	}
-	
-	@Override
-	public void run() {
-		String message = createMessage();
-		send(message);
+	private void sendMessages(int batchSize, double messageSizeInKB) {
+		ExecutorService executor = Executors.newCachedThreadPool();
+		for (int i = 0; i < batchSize; i++){
+			executor.execute(new MessageSender(messageSizeInKB));
+		}
+		waitForAllExecutersToComplete(executor);
 	}
 
-	public abstract void send(String message);
-	
-	private String createMessage() {
-		StringBuilder message = new StringBuilder();
-		message.append(UUID.randomUUID().toString());
-		
-		return message.toString();
+	private void waitForAllExecutersToComplete(ExecutorService executor) {
+		executor.shutdown();
+		while (!executor.isTerminated()) {	 
+		}
 	}
 	
-	protected String appendTimestamp(String message) {
-		StringBuilder sb = new StringBuilder();
-		sb.append(message).append(",").append(System.currentTimeMillis()).append(",");
-		sb.append(resizeMessage());
-		
-		return sb.toString();
+	public Producer(String brokerUrl, String queueName) {
+		this.brokerUrl = brokerUrl;
+		this.queueName = queueName;
 	}
 	
-	protected void logMessage(String message) {
-//		logger.info("Message {} sent", message);
+	public void generateMessages(int batchSize, double messageSizeInKB) throws Exception {
+		createConnection();
+		sendMessages(batchSize, messageSizeInKB);
+		closeConnection();
 	}
 	
-	private String resizeMessage() {
-		Double dMsgSize = (messageSizeInKB / 2) * 1024;
-		int msgSize = dMsgSize.intValue();
+	protected abstract void createConnection() throws Exception;
+	protected abstract void sendMessage(String message) throws Exception;
+	protected abstract void closeConnection() throws Exception;
+	
+	private class MessageSender implements Runnable {	
+		double messageSizeInKB;
 		
-		char[] chars = new char[msgSize];
-		Arrays.fill(chars, 'a');
+		MessageSender(double messageSizeInKB) {
+			this.messageSizeInKB = messageSizeInKB;
+		}
 		
-		return new String(chars);
+		@Override
+		public void run() {
+			String message = createMessage(messageSizeInKB);
+			try {
+				sendMessage(message);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			
+		}
+		
+		private String createMessage(double messageSizeInKB) {
+			StringBuilder message = new StringBuilder();
+			message.append(UUID.randomUUID().toString());
+			message.append(",").append(System.currentTimeMillis()).append(",");
+			message.append(resizeMessage(messageSizeInKB));
+			
+			return message.toString();
+		}
+		
+		private String resizeMessage(double messageSizeInKB) {
+			Double dMsgSize = (messageSizeInKB / 2) * 1024;
+			int msgSize = dMsgSize.intValue();
+			
+			char[] chars = new char[msgSize];
+			Arrays.fill(chars, 'a');
+			
+			return new String(chars);
+		}
+		
 	}
 }

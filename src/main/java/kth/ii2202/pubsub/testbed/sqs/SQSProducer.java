@@ -1,11 +1,9 @@
 package kth.ii2202.pubsub.testbed.sqs;
 
-import com.amazonaws.AmazonClientException;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.services.sqs.AmazonSQSClient;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
-import com.amazonaws.services.sqs.model.SendMessageResult;
 
 import kth.ii2202.pubsub.testbed.Producer;
 
@@ -17,19 +15,35 @@ public class SQSProducer extends Producer {
 
 	private static final String ENDPOINT = "https://sqs.eu-west-1.amazonaws.com";
 	
-	public SQSProducer(String brokerUrl, double messageSizeInKB) {
-		super(brokerUrl, messageSizeInKB);
+	AmazonSQSClient sqs;
+	
+	public SQSProducer(String brokerUrl, String queueName) {
+		super(brokerUrl, queueName);
 	}
 
 	@Override
-	public void send(String message) {
-		AmazonSQSClient client = SQSConnectionFactory.getClient(ENDPOINT);
-		
-		message = appendTimestamp(message);
-		SendMessageRequest sendMessageRequest = new SendMessageRequest(brokerUrl + QUEUE_NAME, message);
-		sendMessageRequest.setMessageGroupId("messageGroup1");
-		client.sendMessage(sendMessageRequest);
-        
+	protected void createConnection() throws Exception {
+		AWSCredentials credentials = null;
+        try {
+            credentials = new ProfileCredentialsProvider().getCredentials();
+        } catch (Exception e) {
+           e.printStackTrace();
+        }
+ 
+        sqs = new AmazonSQSClient(credentials);
+        sqs.setEndpoint(ENDPOINT);
 	}
 
+	@Override
+	protected void sendMessage(String message) throws Exception {
+		SendMessageRequest sendMessageRequest = new SendMessageRequest(brokerUrl + queueName, message);
+		sendMessageRequest.setMessageGroupId("messageGroup1");
+		sqs.sendMessage(sendMessageRequest);
+		
+	}
+
+	@Override
+	protected void closeConnection() throws Exception {
+		
+	}
 }

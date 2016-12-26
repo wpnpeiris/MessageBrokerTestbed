@@ -1,50 +1,49 @@
 package kth.ii2202.pubsub.testbed.kafka;
 
-import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Properties;
-import java.util.Random;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 
-import com.google.common.io.Resources;
-
 import kth.ii2202.pubsub.testbed.Consumer;
+import kth.ii2202.pubsub.testbed.Endpoint;
 
-public class KafkaMsgConsumer extends Consumer {
+public class KafkaMsgConsumer extends Consumer implements Endpoint {
 	KafkaConsumer<String, String> consumer;
 
-	public KafkaMsgConsumer(String brokerUrl, int expectedMessages) {
-		super(brokerUrl, expectedMessages);
+	public KafkaMsgConsumer(String brokerUrl, String queueName) {
+		super(brokerUrl, queueName);
 	}
 
 	@Override
-	public void init() throws Exception {
-		try (InputStream props = Resources.getResource("kafka.consumer.props").openStream()) {
-			Properties properties = new Properties();
-			properties.load(props);
-			if (properties.getProperty("group.id") == null) {
-				properties.setProperty("group.id", "group-" + new Random().nextInt(100000));
-			}
-			consumer = new KafkaConsumer<>(properties);
-		}
-		consumer.subscribe(Arrays.asList(QUEUE_NAME));
-		process();
+	protected void createConnection() throws Exception {
+		Properties props = new Properties();
+		props.put("bootstrap.servers", brokerUrl);
+		props.put("group.id", "test");
+		props.put("enable.auto.commit", "true");
+		props.put("auto.commit.interval.ms", "1000");
+		props.put("session.timeout.ms", "30000");
+		props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+		props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+		consumer = new KafkaConsumer<>(props);
+		consumer.subscribe(Arrays.asList(queueName));
+		
 	}
-
-	private void process() throws Exception {
+	
+	@Override
+	public void listenForMessages() throws Exception {
 		while (true) {
 			ConsumerRecords<String, String> records = consumer.poll(10);
 
 			for (ConsumerRecord<String, String> record : records) {
 				switch (record.topic()) {
 				case QUEUE_NAME:
-//					System.out.println(">>>> " + record.value());
 					logMessage(record.value());
 				}
 			}
 		}
 	}
+	
 }

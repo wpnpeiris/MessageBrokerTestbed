@@ -17,7 +17,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import kth.ii2202.pubsub.testbed.Consumer;
-import kth.ii2202.pubsub.testbed.Main;
 
 /**
  * @author pradeeppeiris
@@ -28,28 +27,26 @@ public class ActiveMqConsumer extends Consumer implements ExceptionListener {
 	
 	private Connection connection;
 	private Session session;
-	private MessageConsumer consumer;
+	private javax.jms.MessageConsumer consumer;
 
-	public ActiveMqConsumer(String brokerUrl, int expectedMessages) {
-		super(brokerUrl, expectedMessages);
+	public ActiveMqConsumer(String brokerUrl, String queueName) {
+		super(brokerUrl, queueName);
 	}
 	
 	@Override
-	public void init() throws Exception {
-		logger.debug("Initialize ActiveMqConsumer");
-		connection = createConnection();
-		session = createSession(connection);
-		consumer = createConsumer(session);
+	protected void createConnection() throws Exception {
+		ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory(brokerUrl);
+		connection = connectionFactory.createConnection();
+		connection.start();
+		connection.setExceptionListener(this);
 		
-		process();
+		session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+		Destination destination = session.createQueue(queueName);
+		consumer = session.createConsumer(destination);
 	}
-
+	
 	@Override
-	public void onException(JMSException ex) {
-
-	}
-
-	private void process() throws Exception {
+	public void listenForMessages() throws Exception {
 		while(true) {
 			Message messageObj = consumer.receive();
 			if (messageObj != null && messageObj instanceof TextMessage) {
@@ -58,30 +55,10 @@ public class ActiveMqConsumer extends Consumer implements ExceptionListener {
 				logMessage(message);
 			}
 		}
-		
-//		consumer.close();
-//		session.close();
-//		connection.close();
 	}
 
-	private MessageConsumer createConsumer(Session session) throws JMSException {
-		Destination destination = session.createQueue(QUEUE_NAME);
-		MessageConsumer consumer = session.createConsumer(destination);
-		return consumer;
+	@Override
+	public void onException(JMSException ex) {
+		logger.error(ex);
 	}
-
-	private Session createSession(Connection connection) throws JMSException {
-		Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-		return session;
-	}
-
-	private Connection createConnection() throws JMSException {
-		ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory(brokerUrl);
-		Connection connection = connectionFactory.createConnection();
-		connection.start();
-		connection.setExceptionListener(this);
-
-		return connection;
-	}
-
 }

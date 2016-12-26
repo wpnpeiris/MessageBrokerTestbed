@@ -7,23 +7,32 @@ import com.rabbitmq.client.ConnectionFactory;
 import kth.ii2202.pubsub.testbed.Producer;
 
 public class RabbitMqProducer extends Producer {
-
-	public RabbitMqProducer(String brokerUrl, double messageSizeInKB) {
-		super(brokerUrl, messageSizeInKB);
+	
+	private Connection connection;
+	private Channel channel;
+	
+	public RabbitMqProducer(String brokerUrl, String queueName) {
+		super(brokerUrl, queueName);
 	}
 	
 	@Override
-	public void send(String message) {
-		try {
-			Channel channel = RabbitMqConnectionFactory.getChannel(brokerUrl);
-			
-			message = appendTimestamp(message);
-			channel.queueDeclare(QUEUE_NAME, false, false, false, null);
-			channel.basicPublish("", QUEUE_NAME, null, message.getBytes());
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+	protected void createConnection() throws Exception {
+		ConnectionFactory factory = new ConnectionFactory();
+		factory.setHost(brokerUrl);
+	    connection = factory.newConnection();
+		channel = connection.createChannel();
+		channel.queueDeclare(queueName, false, false, false, null);
+	}
+	
+	@Override
+	protected void sendMessage(String message) throws Exception {
+		channel.basicPublish("", queueName, null, message.getBytes());
+	}
 
+	@Override
+	protected void closeConnection() throws Exception {
+		channel.close();
+		connection.close();
 	}
 
 }

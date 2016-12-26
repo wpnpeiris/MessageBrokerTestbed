@@ -13,20 +13,26 @@ import org.apache.logging.log4j.Logger;
  * @author pradeeppeiris
  * java -cp "target/testbed-1.0.jar:config" kth.ii2202.pubsub.testbed.Main consumer
  */
-public abstract class Consumer implements Endpoint {
+public abstract class Consumer {
 	private static final Logger logger = LogManager.getLogger(Consumer.class);
 
 	protected String brokerUrl;
-	protected int expectedMessages;
+	protected final String queueName;
 
-	public Consumer(String brokerUrl, int expectedMessages) {
+	public Consumer(String brokerUrl, String queueName) {
 		this.brokerUrl = brokerUrl;
-		this.expectedMessages = expectedMessages;
+		this.queueName = queueName;
 		logger.info("TIME MESSAGEID LATENCY");
 	}
 
-	public abstract void init() throws Exception;
-
+	public void receiveMessages() throws Exception {
+		createConnection();
+		listenForMessages();
+	}
+	
+	public abstract void listenForMessages() throws Exception;
+	protected abstract void createConnection() throws Exception;
+	
 	protected void logMessage(String message) {
 		new Thread(new ConsumerLog(message)).start();
 	}
