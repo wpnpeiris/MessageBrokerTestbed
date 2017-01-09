@@ -20,7 +20,7 @@ public class MainConsumer {
 		startConsumer();
 	}
 
-	public static void startConsumer() throws Exception {
+	private static void startConsumer() throws Exception {
 		Consumer consumer = ConsumerFactory.getMessageConsumer();
 		consumer.receiveMessages();
 	}

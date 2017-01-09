@@ -5,6 +5,7 @@ import java.util.List;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.services.sqs.AmazonSQSClient;
+import com.amazonaws.services.sqs.model.DeleteMessageRequest;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 
@@ -41,6 +42,11 @@ public class SQSConsumer extends Consumer {
 			if(messages != null && messages.size() > 0) {
 				for(Message message : messages) {
 					logMessage(message.getBody());
+				}
+				
+				for(Message message : messages) {
+					String messageReceiptHandle = message.getReceiptHandle();
+		            sqs.deleteMessage(new DeleteMessageRequest(brokerUrl + queueName, messageReceiptHandle));
 				}
 			}
 		}

@@ -27,12 +27,12 @@ public class MainProducer {
 	public static void main(String[] args) throws Exception {
 		Context context = Context.getInstance();
 		int numBatches = Integer.valueOf(context.getProperty(PROP_NUM_BATCHES));
-		double messageSizeInKB = Double.valueOf(context.getProperty(PROP_MESSAGE_SIZE));
+		double messageSizeInByte = Double.valueOf(context.getProperty(PROP_MESSAGE_SIZE));
 		int batchSize = Integer.valueOf(context.getProperty(PROP_BATCH_SIZE));
-		startProducers(numBatches, messageSizeInKB, batchSize);
+		startProducers(numBatches, messageSizeInByte, batchSize);
 	}
 
-	public static void startProducers(int numBatches, double messageSizeInKB, int batchSize) throws Exception {
+	private static void startProducers(int numBatches, double messageSizeInKB, int batchSize) throws Exception {
 		logger.info("Start producers; number of batches{}, batch size {}", numBatches, batchSize);
 		for(int i = 0; i < numBatches; i++) {
 			Producer messageProducer = ProducerFactory.getMessageProducer();
@@ -40,6 +40,6 @@ public class MainProducer {
 			Thread.sleep(1);
 		}
 		
-		logger.info("Completed {} producers", numBatches);
+		logger.info("Completed producers");
 	}
 }

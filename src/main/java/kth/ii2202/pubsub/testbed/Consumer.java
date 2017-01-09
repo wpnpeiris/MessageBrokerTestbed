@@ -34,29 +34,30 @@ public abstract class Consumer {
 	protected abstract void createConnection() throws Exception;
 	
 	protected void logMessage(String message) {
-		new Thread(new ConsumerLog(message)).start();
+		new Thread(new ConsumerLog(message, System.currentTimeMillis())).start();
 	}
 	
 	private class ConsumerLog implements Runnable {
-		String messageId;
-		long sentTime;
+		String message;
+		long receivedTime;
 		
-		ConsumerLog(String message) {
-			processMessage(message);
+		ConsumerLog(String message, long receivedTime) {
+			this.message = message;
+			this.receivedTime = receivedTime;
 		}
 		
 		@Override
 		public void run() {
-			long receivedTime = System.currentTimeMillis();
-			long elappsedTime = (receivedTime - sentTime);
-			logger.info("{} {} {}", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date(receivedTime)), messageId, elappsedTime);	
+			processMessage();
 		}
 		
-		private void processMessage(String message) {
+		private void processMessage() {
 			String[] data = message.split(",");
 			
-			this.messageId = data[0];
-			this.sentTime = Long.valueOf(data[1]);
+			String messageId = data[0];
+			long sentTime = Long.valueOf(data[1]);
+			long elappsedTime = (receivedTime - sentTime);
+			logger.info("{} {} {}", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date(receivedTime)), messageId, elappsedTime);	
 		}
 	}
 }

@@ -35,7 +35,7 @@ public class KafkaMsgConsumer extends Consumer implements Endpoint {
 	@Override
 	public void listenForMessages() throws Exception {
 		while (true) {
-			ConsumerRecords<String, String> records = consumer.poll(10);
+			ConsumerRecords<String, String> records = consumer.poll(1000);
 
 			for (ConsumerRecord<String, String> record : records) {
 				switch (record.topic()) {

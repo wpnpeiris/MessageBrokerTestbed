@@ -28,7 +28,7 @@ public class RabbitMqReceiver extends kth.ii2202.pubsub.testbed.Consumer {
 	
 	@Override
 	public void listenForMessages() throws Exception {
-		channel.queueDeclare(queueName, false, false, false, null);
+		channel.queueDeclare(queueName, true, false, false, null);
 		channel.basicConsume(queueName, true, new Consumer(channel, this));
 	}
 	
